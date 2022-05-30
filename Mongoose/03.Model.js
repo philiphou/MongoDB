@@ -62,6 +62,43 @@ StuModel.find({ name: "jack" }, function(err, docs) {
 
 /*
  3. Model 方法去改：
+    
+     - Model.updateMany(conditions,doc,[options],[callback])
+     - Model.updateOne(conditions,doc,[options],[callback])
+     - 参数： 
+        conditions: 查询条件
+        doc:修改后的对象
+        options： 配置参数
+        callback: 回调函数
+    - Model.replaceOne(conditions,doc,[options],[callback])
 
-    - 
  */
+
+//  修改Jack的年龄为18
+
+StuModel.updateOne({ name: "jack" }, { $set: { age: 18 } }, function(err) {
+    if (!err) {
+        console.log("年龄修改成功")
+    }
+
+})
+
+/* 
+4. Model 删除功能
+    Model.remove()
+    Model.deleteOne()
+    Model.deleteMany()
+
+*/
+
+StuModel.deleteMany({ name: "jack" }, (err) => {
+    if (!err) console.log('删除成功')
+})
+
+//  查询文档个数
+
+StuModel.count({}, (err, count) => {
+        if (!err) {
+            console.log(count)
+        }
+    }) // 不传任何条件，去计数所有的文档
