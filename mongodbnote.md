@@ -68,7 +68,93 @@
              进入到指定数据库 test
              db.students.find() // 输出：{ "_id" : ObjectId("62943b9319b3a2444290c003"), "name" : "liyi", "age" : 28 }
 
+        - 图形化工具： MongoDB compass ，可以增删改查数据库，集合和文档; 
+             1. 当我们向集合中插入文档时候，如果没有给文档指定 _id属性，则数据库会自动为文档添加，该属性用来作为文档的唯一标识。 根据时间戳和机器猫生成的，确保唯一性。
+             2. _id 属性也可以自己指定，如果自己指定了，数据库就不会再添加了，如果自己指定，也要必须确保文档的唯一性； 建议数据库生成。 
+                 data.<collection>.find({"name":"liyi"}).count() 寻找名字叫liyi 的人并返回个数
+             3. 修改： 
+                    db.students.find()
+                    db.<collection>.update(查询条件，更改内容) ： update 默认情况会使用新对象替换旧对象， 如果需要修改指定属性，而不是替换，需要使用“修改操作符”  {$set:{}} 可以用来修改文档中的指定属性。 update()默认情况只改一个，会把查询到的复合条件的第一个文档修改；
+                    db.students.update({"name":"liyi"},{$set:{"age":18，“city":"toronto"}}) 选中名为liyi的文档，将年龄属性改为18，添加地址属性：多伦多
+                    同理： unset() 可以删除属性；
+                    db.<collection>.updateMany() 同时修改多个复合条件的文档；
+                    db.<collection>.updateOne() 修改一个复合条件的文档
+              4. 删除文档： 
+                   db.<collection>.remove() // 可以根据条件删除文档，参数传入方式和 find() 一样,默认情况会删除多个；如果remove 第二个参数传入 true, 则只会删除一个；如果只传递一个空对象做参数，则会清空集合，删除所有文档；类似于直接删除文档： db.<collection>.drop()
+                   db.<collection>.deleteOne()
+                   db.<collection>.deleteMany()
+                   db.<collectioni>.drop() 删除集合
+                   db.dropDatebase() 删除数据库
+                   一般数据库中的数据不会被删除，方法很少调用；一般会在数据中添加字段，表示数据是否被删除；字段属性： {isDeleted:0}
+              5. MongoDB 支持直接通过内嵌文档的属性进行查询： 如果要查询内嵌文档，可以通过. 的形式匹配，如果要通过内嵌文档对文档查询，此时属性名必须使用引号；
+                      db.users.fin({"hobby.movies":"hero"}) 就是 在集合user 里找，内嵌文档hoppy里电影属性值是或者数组元素离有 hero 的文档；
+                       数组修改符： {$push:{a:1}}
+                       db.numbers.find({num:{$gte:500，$lt:800}}) 找num值大于等于500小于800的文档：$gt: 大于  $gte: 大于等于 $lt: 小于 $lte:小于等于 $eq: 等于
+                       db.numbers.find().limit(10) 显示搜寻到的结果的前十条；
+                       db.numbers.find().skip(10).limit(10) 搜寻第11-20条数据，skip()是跳过多少个。实际上skip 类似于页码 1,2,3,4。。。
+        - 文档之间的关系：
+            1. 一对一 one to one
+                - 例如： 夫妻
+                - 在MongoDB中，可以通过内嵌文档的形式来体现一对一的关系；
+                   db.couple.insert{
+                       [
+                           {
+                               name:"黄蓉"，
+                               husband:{
+                                   name:"郭靖“
+                               }
+                           }，
+                           {
+                               name:"小龙女"，
+                               husband:{
+                                   name:"杨过"
+                               }
+                           }，
+                       ]
 
+                   }
+
+            2. 一对多 或者多对一 (最常见)
+                例如：父母和孩子；用户和订单；文章和评论；
+                - 可以通过内嵌文档，来映射一对多关系；就是内嵌文档变成一个数组；
+                - 第二种一对多映射方法:用户 （user) 和 订单 （orders） 可以在orders集合的每个文档里里添加一个属性 user_id: 来连接到 users集合，
+                  因为users 集合有数据库自己生成的唯一的 _id，两个集合的文档就都包含一个相同属性： _id;
+
+                  let user_id = db.users.findOne({username:"swk"})._id
+                  db.orders.find({user_id:user_id})
+               
+            3. 多对多
+               例如： 分类和商品； 老师和学生； 体现一对多关系，可以在学生集合里每个学生文档下添加一个teachers_id 属性，该属性值是个数组，数组里的元素是对应的多个老师的 _id; 这样就实现了多对多关系；
+               增删改查可以查文档函数；
+               查询文档时候，默认是根据_id 查询排列；
+            4.  排序： .sort() 指定排序规则， 需要传递一个对象指定排序规则，1 是升序，-1 是降序 ；
+                db.emp.find({}).sort({salary：1})  就是将员工表按照工资从低到高排序；
+                db.emp.find({}).sort({salary：1，empno:-1})  就是将员工表按照工资从低到高,员工号从高到低排序；
+                limit, skip, 和 sort 可以以任意顺序调用；
+                在查询时，可以在第二个参数里设置查询结果的投影： 
+                db.emp.find({},{ename:1}) 这样就会查询所有员工，并只显示员工的id 和姓名  .find({},{}) 传递了两个参数，第二个参数是个映射，可以用来只显示某些属性；
+           
+
+    - Mongoose：
+        - 简介
+            1. 之前我们都是通过shell 来完成对数据库各种操作的，在开发中大部分时候我们都需要通过程序来完成对数据库的操作
+            2. 而 mongoose 就是一个让我们可以通过 node 来操作 mongoDB的模块
+            3. mongoose 是一个对象文档模型（ODM)库，它对Node原生的mongoDB进行了进一步的优化封装，并提供了更多的功能。
+            4. 在大多数情况下，它被用来把结构化的模式应用到一个MongoDB集合，并提供了验证和类型转换等好处；
+        - 好处
+            1. 可以为文档创建一个模式结构 （Schema)，类似于一种约束；
+            2. 可以对模型中的对象/文档进行验证
+            3. 数据可以通过类型转换转换为对象模型
+            4. 可以使用中间件来应用业务逻辑挂钩
+            5. 比 node 原生的 MongoDB 驱动更容易；
+        - 新的对象
+            1. Schema(模式对象)
+                - Schema 对象定义约束了数据库中的文档结构
+            2. Model
+                - Model 对象作为集合中的所有文档的标识，相当于 MongoDB数据库中的集合 collection
+            3. Document
+                - Document 表示集合中的具体文档，相当于集合中的一个具体文档；
+        -  
 
            
                                
